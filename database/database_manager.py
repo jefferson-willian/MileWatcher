@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import logging
+from datetime import datetime
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -43,16 +44,17 @@ class DatabaseManager:
 
             # Create posts table with a foreign key to sources
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS posts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    source_id INTEGER NOT NULL,
-                    title TEXT NOT NULL,
-                    link TEXT UNIQUE NOT NULL,
-                    extracted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    is_processed INTEGER DEFAULT 0 NOT NULL,
-                    FOREIGN KEY (source_id) REFERENCES sources(id)
-                )
-            ''')
+                    CREATE TABLE IF NOT EXISTS posts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        source_id INTEGER NOT NULL,
+                        title TEXT NOT NULL,
+                        link TEXT UNIQUE NOT NULL,
+                        extracted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        processed_at TIMESTAMP,
+                        is_content_relevant BOOLEAN,
+                        FOREIGN KEY (source_id) REFERENCES sources(id)
+                    )
+                ''')
             conn.commit()
             logger.info(f"Database '{self.db_name}' and tables 'sources' and 'posts' ensured to exist.")
         except sqlite3.Error as e:
@@ -123,58 +125,76 @@ class DatabaseManager:
             if conn:
                 conn.close()
 
-    def mark_post_as_processed(self, post_id: int):
+    def update_post_relevance_status(self, post_id: int, is_relevant: bool):
         """
-        Updates a post's 'is_processed' status to 1 (true) by its ID.
+        Sets a post's 'is_content_relevant' status and records the 'processed_at' timestamp
+        with the current time.
         """
         conn = None
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
+
+            # Get the current timestamp
+            current_timestamp = datetime.now().isoformat()
+
             cursor.execute(
-                "UPDATE posts SET is_processed = 1 WHERE id = ?",
-                (post_id,)
+                """
+                UPDATE posts
+                SET is_content_relevant = ?,
+                    processed_at = ?
+                WHERE id = ?
+                """,
+                (is_relevant, current_timestamp, post_id) # is_relevant (Python bool) maps to SQLite BOOLEAN
             )
             conn.commit()
             if cursor.rowcount > 0:
-                logger.info(f"Post ID {post_id} marked as processed.")
+                logger.info(f"Post ID {post_id} marked as relevant: {is_relevant} at {current_timestamp}.")
             else:
-                logger.warning(f"Post ID {post_id} not found to mark as processed.")
+                logger.warning(f"Post ID {post_id} not found to update relevance status.")
         except sqlite3.Error as e:
-            logger.error(f"Database error marking post ID {post_id} as processed: {e}", exc_info=True)
+            logger.error(f"Database error updating relevance for post ID {post_id}: {e}", exc_info=True)
         finally:
             if conn:
                 conn.close()
 
-    def get_unprocessed_posts(self, limit: int = -1) -> list[dict]:
+    def get_posts_for_content_processing(self, source_id: int = None, limit: int = -1) -> list[dict]:
         """
-        Retrieves posts that have not yet been processed (is_processed = 0).
-        Returns a list of dictionaries with post details.
+        Retrieves posts that have not yet had their content processed/assessed for relevance
+        (i.e., 'is_content_relevant' is NULL).
+        Returns a list of dictionaries, where each dictionary contains 'id' and 'link'.
         """
         conn = None
-        posts = []
+        posts_to_process = []
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
-            query = "SELECT id, source_id, title, link, extracted_at FROM posts WHERE is_processed = 0"
+            query = """
+                SELECT id, link
+                FROM posts
+                WHERE is_content_relevant IS NULL
+            """
+            params = []
+            if source_id is not None:
+                query += " AND source_id = ?"
+                params.append(source_id)
+
             if limit > 0:
                 query += f" LIMIT {limit}"
-            
-            cursor.execute(query)
+
+            cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
-            
+
             for row in rows:
-                posts.append({
-                    'id': row[0],
-                    'source_id': row[1],
-                    'title': row[2],
-                    'link': row[3],
-                    'extracted_at': row[4]
+                # --- CORREÇÃO APLICADA AQUI: Acessando por índice numérico ---
+                posts_to_process.append({
+                    'id': row[0],  # 'id' é a primeira coluna na SELECT (índice 0)
+                    'link': row[1] # 'link' é a segunda coluna na SELECT (índice 1)
                 })
-            logger.info(f"Retrieved {len(posts)} unprocessed posts.")
-            return posts
+            logger.info(f"Retrieved {len(posts_to_process)} posts requiring relevance assessment (id and link only).")
+            return posts_to_process
         except sqlite3.Error as e:
-            logger.error(f"Database error retrieving unprocessed posts: {e}", exc_info=True)
+            logger.error(f"Database error retrieving posts for relevance assessment: {e}", exc_info=True)
             return []
         finally:
             if conn:
