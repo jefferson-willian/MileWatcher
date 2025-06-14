@@ -35,7 +35,6 @@ class DatabaseManager:
                 CREATE TABLE IF NOT EXISTS sources (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
-                    base_url TEXT NOT NULL,
                     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -60,7 +59,7 @@ class DatabaseManager:
             if conn:
                 conn.close()
 
-    def get_or_create_source_id(self, source_name: str, source_base_url: str) -> int:
+    def get_or_create_source_id(self, source_name: str) -> int:
         """
         Retrieves the ID of an existing source or creates a new one if it doesn't exist.
         Returns the source ID.
@@ -79,7 +78,7 @@ class DatabaseManager:
                 return result[0]
             else:
                 # If source does not exist, insert it
-                cursor.execute("INSERT INTO sources (name, base_url) VALUES (?, ?)", (source_name, source_base_url))
+                cursor.execute("INSERT INTO sources (name) VALUES (?)", (source_name,))
                 conn.commit()
                 source_id = cursor.lastrowid
                 logger.info(f"New source '{source_name}' added to the database with ID: {source_id}.")
