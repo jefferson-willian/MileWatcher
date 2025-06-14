@@ -14,6 +14,8 @@ class DatabaseManager:
     """
     def __init__(self, db_name: str = DB_NAME):
         self.db_name = db_name
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(self.db_name), exist_ok=True)
         self._create_database_and_tables()
 
     def _get_connection(self):
@@ -101,6 +103,7 @@ class DatabaseManager:
             conn = self._get_connection()
             cursor = conn.cursor()
             inserted_count = 0
+            skipped_count = 0
             for post in posts:
                 try:
                     cursor.execute(
@@ -109,11 +112,11 @@ class DatabaseManager:
                     )
                     inserted_count += 1
                 except sqlite3.IntegrityError:
-                    logger.info(f"Skipping duplicate post (link already exists): {post['link']}")
+                    skipped_count += 1
                 except Exception as e:
                     logger.error(f"Error inserting post {post['link']}: {e}", exc_info=True)
             conn.commit()
-            logger.info(f"Successfully inserted {inserted_count} new posts into '{self.db_name}'.")
+            logger.info(f"Skipped {skipped_count} posts and inserted {inserted_count} new posts into '{self.db_name}'.")
         except sqlite3.Error as e:
             logger.error(f"Database error during post insertion: {e}", exc_info=True)
         finally:
