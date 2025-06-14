@@ -22,28 +22,29 @@ class PassageiroDePrimeiraPostExtractor(PostExtractor):
         """
         Extracts titles and links of posts from the Passageiro de Primeira website.
         """
+
         self.logger.info("Starting post extraction for Passageiro de Primeira.")
+
         soup = self._fetch_html_from_url(self._url)
         if not soup:
             self.logger.error("Failed to fetch HTML content. Cannot extract posts.")
             return []
 
-        posts = []
         promotions_section = soup.find('div', {'data-term': 'promocoes'})
 
         if not promotions_section:
-            self.logger.warning("Section 'promocoes' (data-term=\"promocoes\") not found in HTML. Searching in the entire document.")
-            target_scope = soup
-        else:
-            target_scope = promotions_section
-            self.logger.info("Section 'promocoes' found. Searching for posts...")
-
-        h1_titles = target_scope.find_all('h1', class_='article--title')
-
-        if not h1_titles:
-            self.logger.warning("No <h1 class=\"article--title\"> elements found. Please check the page structure.")
+            self.logger.error("Section 'promocoes' (data-term=\"promocoes\") not found in HTML. Please check the page structure.")
             return []
 
+        self.logger.info("Section 'promocoes' found. Searching for posts...")
+
+        h1_titles = promotions_section.find_all('h1', class_='article--title')
+
+        if not h1_titles:
+            self.error.warning("No <h1 class=\"article--title\"> elements found. Please check the page structure.")
+            return []
+
+        posts = []
         for h1_tag in h1_titles:
             link_tag = h1_tag.find('a', href=True)
 
@@ -57,7 +58,9 @@ class PassageiroDePrimeiraPostExtractor(PostExtractor):
 
                 if title and title.strip() != '':
                     posts.append({'title': title, 'link': link})
+
         self.logger.info(f"Finished extraction for Passageiro de Primeira. Found {len(posts)} posts.")
+
         return posts
 
     def extract_post_content(self, post_url: str) -> str:
