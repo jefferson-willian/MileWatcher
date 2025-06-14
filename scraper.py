@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    logger.info("Application started.")
+    logger.info("Post extraction started.")
 
     db_manager = DatabaseManager()
 
@@ -46,6 +46,6 @@ if __name__ == "__main__":
             logger.critical(f"Failed to get or create source ID for {source_name}. Cannot proceed with post insertion.")
         
         logger.info(f"--- Finished processing for source: {source_name} ---")
-        logger.info("-" * 50) # Separador visual entre fontes
+        logger.info("-" * 50) # Horizontal line
     
-    logger.info("All extractors processed. Application finished.")
+    logger.info("All extractors processed. Post extraction finished.")
