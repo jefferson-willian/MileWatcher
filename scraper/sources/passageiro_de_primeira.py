@@ -72,14 +72,14 @@ class PassageiroDePrimeiraScraper(Scraper):
             self.logger.error(f"Failed to fetch HTML content for post URL: {post_url}. Cannot extract content.")
             return ""
 
-        # Based on inspection, the main article content is often within a div with class 'single-content'
-        content_div = soup.find('div', class_='single-content')
+        # Based on inspection, the main article content is often within an article with class 'single-content'
+        article_tag = soup.find('article', class_='single-content')
 
-        if content_div:
+        if article_tag:
             # Get all text, strip extra whitespace, and join paragraphs with newlines
-            content_text = content_div.get_text(separator='\n', strip=True)
+            content_text = article_tag.get_text(separator='\n', strip=True)
             self.logger.info(f"Successfully extracted content from {post_url} (length: {len(content_text)}).")
             return content_text
         else:
-            self.logger.warning(f"Could not find main content div (class 'single-content') for {post_url}.")
+            self.logger.warning(f"Could not find main article (class 'single-content') for {post_url}.")
             return ""
