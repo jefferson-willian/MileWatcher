@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Define the database file name
-DB_NAME = 'promotions.db'
+DB_NAME = 'database/promotions.db'
 
 class DatabaseManager:
     """

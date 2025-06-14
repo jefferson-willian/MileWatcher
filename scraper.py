@@ -1,6 +1,6 @@
 import logging
 
-from database_manager import DatabaseManager
+from database.database_manager import DatabaseManager
 from post_extractor.impl.passageiro_de_primeira import PassageiroDePrimeiraPostExtractor
 
 # --- Logging Configuration ---
