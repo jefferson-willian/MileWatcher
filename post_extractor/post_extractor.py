@@ -17,27 +17,17 @@ class PostExtractor(ABC):
     def __init__(self, url: str, source_name: str):
         self._url = url
         self._source_name = source_name
-        
-        parsed_url = urlparse(url)
-        self._base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-
         self.logger = logging.getLogger(self.__class__.__name__)
-        logger.debug(f"PostExtractor initialized for {self.source_name}. Base URL inferred as: {self.base_url}")
+        logger.debug(f"PostExtractor initialized for {self.source_name}")
 
 
     @property
     def source_name(self) -> str:
         """Read-only property for the source's name."""
         return self._source_name
-
-    @property
-    def base_url(self) -> str:
-        """Read-only property for the source's base URL."""
-        return self._base_url
 
     @abstractmethod
     def extract_posts(self) -> list[dict]:
