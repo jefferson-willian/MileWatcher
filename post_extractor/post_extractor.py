@@ -39,18 +39,27 @@ class PostExtractor(ABC):
         """
         pass
 
-    def _fetch_html(self) -> BeautifulSoup | None:
+    @abstractmethod
+    def extract_post_content(self, post_url: str) -> str:
         """
-        Helper method to make the HTTP request and parse the HTML.
+        Abstract method to extract the main textual content from a single post URL.
+        Must be implemented by concrete classes.
+        Returns the extracted content as a single string.
         """
-        self.logger.info(f"Accessing URL: {self._url}")
+        pass
+
+    def _fetch_html_from_url(self, target_url: str) -> BeautifulSoup | None:
+        """
+        Helper method to make the HTTP request and parse the HTML from a given URL.
+        """
+        self.logger.info(f"Accessing URL: {target_url}")
         try:
-            response = requests.get(self._url, headers=self.headers, timeout=15)
+            response = requests.get(target_url, headers=self.headers, timeout=15)
             response.raise_for_status()
             return BeautifulSoup(response.text, 'html.parser')
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"HTTP request error for {self._url}: {e}", exc_info=True)
+            self.logger.error(f"HTTP request error for {target_url}: {e}", exc_info=True)
             return None
         except Exception as e:
-            self.logger.critical(f"An unexpected error occurred during HTML fetch from {self._url}: {e}", exc_info=True)
+            self.logger.critical(f"An unexpected error occurred during HTML fetch from {target_url}: {e}", exc_info=True)
             return None
