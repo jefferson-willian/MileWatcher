@@ -1,81 +1,141 @@
 import requests
 from bs4 import BeautifulSoup
+from abc import ABC, abstractmethod
+import logging
 
-def extract_posts_passageiro_de_primeira_url():
+# Import the DatabaseManager from the separate file
+from database_manager import DatabaseManager
+
+# --- Logging Configuration ---
+# Basic configuration for logging to console and a file
+logging.basicConfig(
+    level=logging.INFO, # Set the default logging level
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(), # Log to console
+        logging.FileHandler('app_log.log') # Log to a file
+    ]
+)
+
+# Get a logger for the main module
+logger = logging.getLogger(__name__)
+
+class PostExtractor(ABC):
     """
-    Extracts titles and links of posts within the element with data-term="promocoes"
-    directly from the Passageiro de Primeira URL, using the h1.article--title structure.
+    Abstract class defining the contract for post extractors.
+    All concrete implementations must inherit from this class
+    and implement the 'extract_posts' method.
     """
-    url = 'https://passageirodeprimeira.com/categorias/promocoes/'
-    base_url = "https://passageirodeprimeira.com" # For relative links
 
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
+    def __init__(self, url: str):
+        self.url = url
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        self.logger = logging.getLogger(self.__class__.__name__) # Logger for each extractor class
 
-    print(f"Accessing URL: {url}")
-    try:
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status() # Raises an HTTPError for bad responses (4xx or 5xx)
+    @abstractmethod
+    def extract_posts(self) -> list[dict]:
+        """
+        Abstract method to extract posts from a specific source.
+        Must be implemented by concrete classes.
+        Returns a list of dictionaries, where each dictionary contains
+        'title' and 'link' of the post.
+        """
+        pass
 
-        html_content = response.text
-        soup = BeautifulSoup(html_content, 'html.parser')
+    def _fetch_html(self) -> BeautifulSoup | None:
+        """
+        Helper method to make the HTTP request and parse the HTML.
+        """
+        self.logger.info(f"Accessing URL: {self.url}")
+        try:
+            response = requests.get(self.url, headers=self.headers, timeout=15)
+            response.raise_for_status()
+            return BeautifulSoup(response.text, 'html.parser')
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"HTTP request error for {self.url}: {e}", exc_info=True)
+            return None
+        except Exception as e:
+            self.logger.critical(f"An unexpected error occurred during HTML fetch from {self.url}: {e}", exc_info=True)
+            return None
+
+class PassageiroDePrimeiraPostExtractor(PostExtractor):
+    """
+    Concrete implementation of PostExtractor for the Passageiro de Primeira website.
+    Defines the specific logic to extract posts from the promotions section.
+    """
+    def __init__(self):
+        super().__init__(url='https://passageirodeprimeira.com/categorias/promocoes/')
+        self.source_name = "Passageiro de Primeira"
+        self.base_url = "https://passageirodeprimeira.com" # Managed in the subclass
+
+    def extract_posts(self) -> list[dict]:
+        """
+        Extracts titles and links of posts from the Passageiro de Primeira website.
+        """
+        self.logger.info("Starting post extraction for Passageiro de Primeira.")
+        soup = self._fetch_html()
+        if not soup:
+            self.logger.error("Failed to fetch HTML content. Cannot extract posts.")
+            return []
+
         posts = []
-
-        # 1. Find the element with the data-term="promocoes" attribute (main promotions section)
-        # We keep this search as posts might be contained within it.
         promotions_section = soup.find('div', {'data-term': 'promocoes'})
 
         if not promotions_section:
-            print("Section 'promocoes' (data-term=\"promocoes\") not found in HTML. Searching in the entire document.")
-            # If the main section is not found, we try to search for titles in the entire document.
-            # This might happen if the page structure has changed and the 'data-term' section no longer encloses all posts.
+            self.logger.warning("Section 'promocoes' (data-term=\"promocoes\") not found in HTML. Searching in the entire document.")
             target_scope = soup
         else:
             target_scope = promotions_section
-            print("Section 'promocoes' found. Searching for posts...")
+            self.logger.info("Section 'promocoes' found. Searching for posts...")
 
-
-        # 2. Within the scope (promotions section or entire document), look for the post elements.
-        # Now, we look for the <h1 class="article--title"> structure you indicated.
         h1_titles = target_scope.find_all('h1', class_='article--title')
 
         if not h1_titles:
-            print("No <h1 class=\"article--title\"> elements found. Please check the page structure.")
-            # In case the h1.article--title structure is no longer there, we could try the previous one
-            # or re-investigate the page.
+            self.logger.warning("No <h1 class=\"article--title\"> elements found. Please check the page structure.")
             return []
 
         for h1_tag in h1_titles:
-            link_tag = h1_tag.find('a', href=True) # Find the <a> tag inside the <h1>
+            link_tag = h1_tag.find('a', href=True)
 
             if link_tag:
                 link = link_tag.get('href')
-                title = link_tag.get_text(strip=True) # The title is the text within the <a> tag
+                title = link_tag.get_text(strip=True)
 
-                # Ensures relative links become absolute
                 if link and not link.startswith(('http://', 'https://')):
-                    link = base_url + link
+                    link = self.base_url + link
 
-                # Avoids posts with empty or generic titles if there's any parsing error
                 if title and title.strip() != '':
                     posts.append({'title': title, 'link': link})
-
+        self.logger.info(f"Finished extraction for Passageiro de Primeira. Found {len(posts)} posts.")
         return posts
 
-    except requests.exceptions.RequestException as e:
-        print(f"HTTP request error for {url}: {e}")
-        return []
-    except Exception as e:
-        print(f"An unexpected error occurred during extraction: {e}")
-        return []
-
 if __name__ == "__main__":
-    found_posts = extract_posts_passageiro_de_primeira_url()
+    # Instantiate the DatabaseManager
+    db_manager = DatabaseManager()
 
-    if found_posts:
-        print(f"\nFound {len(found_posts)} posts in the promotions section of Passageiro de Primeira (from URL):")
-        for i, post in enumerate(found_posts):
-            print(f"{i+1}. Title: {post['title']}\n   Link: {post['link']}\n")
+    # Instantiate the Passageiro de Primeira extractor
+    passageiro_de_primeira_extractor = PassageiroDePrimeiraPostExtractor()
+
+    # Get or create the source ID for Passageiro de Primeira
+    source_id = db_manager.get_or_create_source_id(
+        passageiro_de_primeira_extractor.source_name,
+        passageiro_de_primeira_extractor.base_url
+    )
+
+    if source_id != -1: # Proceed only if source ID was successfully obtained
+        found_posts = passageiro_de_primeira_extractor.extract_posts()
+
+        if found_posts:
+            logger.info(f"Extracted {len(found_posts)} posts from {passageiro_de_primeira_extractor.source_name}. Attempting to save to DB.")
+            # Display the found posts (optional, for debugging/verification)
+            # for i, post in enumerate(found_posts):
+            #     logger.debug(f"{i+1}. Title: {post['title']}\n    Link: {post['link']}")
+
+            # Save the extracted posts to the database, associated with the source ID
+            db_manager.insert_posts(source_id, found_posts)
+        else:
+            logger.info(f"No posts found from {passageiro_de_primeira_extractor.source_name} or an issue occurred during extraction.")
     else:
-        print("No posts found in the promotions section or an issue occurred during URL extraction.")
+        logger.critical("Failed to get or create source ID. Cannot proceed with post insertion.")
