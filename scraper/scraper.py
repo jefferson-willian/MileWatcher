@@ -4,14 +4,13 @@ from abc import ABC, abstractmethod
 import logging
 from urllib.parse import urlparse
 
-# Logger for the core_extractors module
 logger = logging.getLogger(__name__)
 
-class PostExtractor(ABC):
+class Scraper(ABC):
     """
-    Abstract class defining the contract for post extractors.
+    Abstract class defining the contract for a scraper.
     All concrete implementations must inherit from this class
-    and implement the 'extract_posts' method.
+    and implement the 'extract_posts' and 'extract_post_content' methods.
     """
 
     def __init__(self, url: str, source_name: str):
@@ -21,7 +20,7 @@ class PostExtractor(ABC):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         self.logger = logging.getLogger(self.__class__.__name__)
-        logger.debug(f"PostExtractor initialized for {self.source_name}")
+        logger.debug(f"Scraper initialized for {self.source_name}")
 
 
     @property

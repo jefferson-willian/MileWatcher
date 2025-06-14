@@ -1,7 +1,7 @@
 import logging
 
 from database.database_manager import DatabaseManager
-from post_extractor.impl.passageiro_de_primeira import PassageiroDePrimeiraPostExtractor
+from scraper.sources.passageiro_de_primeira import PassageiroDePrimeiraScraper
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -16,26 +16,26 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    logger.info("Post extraction started.")
+    logger.info("Application started.")
 
     db_manager = DatabaseManager()
 
-    extractors = [
-        PassageiroDePrimeiraPostExtractor(),
+    scrapers = [
+        PassageiroDePrimeiraScraper(),
     ]
 
-    logger.info(f"Configured {len(extractors)} extractor(s) to run.")
+    logger.info(f"Configured {len(scrapers)} scraper(s) to run.")
 
-    for extractor in extractors:
-        source_name = extractor.source_name
+    for scraper in scrapers:
+        source_name = scraper.source_name
         
         logger.info(f"--- Starting processing for source: {source_name} ---")
 
-        # Get or create the source ID for the current extractor
+        # Get or create the source ID for the current scraper
         source_id = db_manager.get_or_create_source_id(source_name)
 
         if source_id != -1:
-            found_posts = extractor.extract_posts()
+            found_posts = scraper.extract_posts()
 
             if found_posts:
                 logger.info(f"Extracted {len(found_posts)} posts from {source_name}. Attempting to save to DB.")
@@ -48,4 +48,4 @@ if __name__ == "__main__":
         logger.info(f"--- Finished processing for source: {source_name} ---")
         logger.info("-" * 50) # Horizontal line
     
-    logger.info("All extractors processed. Post extraction finished.")
+    logger.info("All scrapers processed. Application finished.")

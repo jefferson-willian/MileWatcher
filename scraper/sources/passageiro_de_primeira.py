@@ -1,15 +1,13 @@
 import logging
 import requests
 from bs4 import BeautifulSoup
+from ..scraper import Scraper
 
-from ..post_extractor import PostExtractor
-
-# Logger for this specific extractor
 logger = logging.getLogger(__name__)
 
-class PassageiroDePrimeiraPostExtractor(PostExtractor):
+class PassageiroDePrimeiraScraper(Scraper):
     """
-    Concrete implementation of PostExtractor for the Passageiro de Primeira website.
+    Concrete implementation of Scraper for the Passageiro de Primeira website.
     Defines the specific logic to extract posts from the promotions section.
     """
     def __init__(self):
