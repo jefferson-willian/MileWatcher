@@ -2,7 +2,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
-from post_extractor import PostExtractor # Import the abstract base class
+from ..post_extractor import PostExtractor
 
 # Logger for this specific extractor
 logger = logging.getLogger(__name__)
