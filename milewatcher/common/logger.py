@@ -1,6 +1,5 @@
 import logging
 import sys
-from milewatcher.common.file_config_manager import FileConfigManager
 
 class AppLogger:
     """
@@ -42,7 +41,7 @@ class AppLogger:
         logger.addHandler(console_handler)
 
         # --- Configure File Handler ---
-        file_handler = logging.FileHandler(FileConfigManager().get_file_path('app_log.log'))
+        file_handler = logging.FileHandler('/tmp/milewatcher.log')
         file_handler.setLevel(logging.DEBUG) # File captures all levels (DEBUG, INFO, etc.)
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
