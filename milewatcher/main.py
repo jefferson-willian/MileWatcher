@@ -1,19 +1,11 @@
 import logging
+import sys
 
 from database.database_manager import DatabaseManager
 from scraper.sources.passageiro_de_primeira import PassageiroDePrimeiraScraper
+from common.logger import AppLogger
 
-# --- Logging Configuration ---
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] [%(name)s] %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('app_log.log')
-    ]
-)
-
-logger = logging.getLogger(__name__)
+logger = AppLogger.get_logger(__name__)
 
 def _run_post_extraction_phase(db_manager: DatabaseManager, scrapers: list):
     """
