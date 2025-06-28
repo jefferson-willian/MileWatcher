@@ -101,7 +101,7 @@ class MileWatcher:
 
                 # Update the database with relevance status
                 self._db_manager.update_post_relevance_status(post_id, is_content_relevant)
-                logger.info(f"Database updated for post ID: {post_id} with relevance: {is_content_relevant}.")
+                logger.info(f"Database updated for URL ({post_url}) with relevance: {is_content_relevant}.")
 
         logger.info("Content analysis completed for all sources")
 
