@@ -51,7 +51,7 @@ class DatabaseManager:
                     )
                 ''')
             conn.commit()
-            logger.info(f"Database '{self._db_name}' and tables 'sources' and 'posts' ensured to exist.")
+            logger.debug(f"Database '{self._db_name}' and tables 'sources' and 'posts' ensured to exist.")
         except sqlite3.Error as e:
             logger.error(f"Database error during table creation: {e}", exc_info=True)
         finally:
