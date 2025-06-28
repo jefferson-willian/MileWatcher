@@ -83,7 +83,7 @@ class MileWatcher:
                 logger.debug(f"Processing content for post ID: {post_id}, URL: {post_url}")
 
                 extracted_content = None
-                is_content_relevant = None # Initialize as None (unknown)
+                content_state = DatabaseManager.PostState.UNPROCESSED
 
                 try:
                     # Extract the full content from the post's URL
@@ -92,16 +92,18 @@ class MileWatcher:
                     if extracted_content:
                         # TODO: Implement actual relevance analysis logic here
                         # For now, kept as False, as per the original.
-                        is_content_relevant = False
+                        content_state = DatabaseManager.PostState.NOT_RELEVANT
                     else:
+                        content_state = DatabaseManager.PostState.ERROR
                         logger.error(f"Could not extract content from URL: {post_url}")
 
                 except Exception as e:
+                    content_state = DatabaseManager.PostState.ERROR
                     logger.error(f"Something went wrong during content extraction & analysis: {e}", exc_info=True)
 
                 # Update the database with relevance status
-                self._db_manager.update_post_relevance_status(post_id, is_content_relevant)
-                logger.info(f"Database updated for URL ({post_url}) with relevance: {is_content_relevant}.")
+                self._db_manager.update_post_state(post_id, content_state)
+                logger.info(f"Database updated for URL ({post_url}) with state: {content_state}.")
 
         logger.info("Content analysis completed for all sources")
 

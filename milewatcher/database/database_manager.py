@@ -1,6 +1,7 @@
 import logging
 import sqlite3
 from datetime import datetime
+from enum import Enum
 from milewatcher.common.file_config_manager import FileConfigManager
 
 # Configure logger for this module
@@ -46,7 +47,7 @@ class DatabaseManager:
                         link TEXT UNIQUE NOT NULL,
                         extracted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         processed_at TIMESTAMP,
-                        is_content_relevant BOOLEAN,
+                        state TEXT DEFAULT 'UNPROCESSED' NOT NULL CHECK(state IN ('UNPROCESSED', 'RELEVANT', 'NOT_RELEVANT', 'ERROR')),
                         FOREIGN KEY (source_id) REFERENCES sources(id)
                     )
                 ''')
@@ -124,43 +125,53 @@ class DatabaseManager:
             if conn:
                 conn.close()
 
-    def update_post_relevance_status(self, post_id: int, is_relevant: bool):
+    class PostState(Enum):
+        UNPROCESSED = "UNPROCESSED"
+        RELEVANT = "RELEVANT"
+        NOT_RELEVANT = "NOT_RELEVANT"
+        ERROR = "ERROR"
+
+    def update_post_state(self, post_id: int, state: PostState):
         """
-        Sets a post's 'is_content_relevant' status and records the 'processed_at' timestamp
-        with the current time.
+        Sets a post's 'state' and records the 'processed_at' timestamp
+        with the current time. The 'state' should be one of the PostState enum members.
         """
+        # The type hint `state: PostState` already provides some level of validation
+        # However, a runtime check ensures robustness if types are not strictly enforced.
+        if not isinstance(state, self.PostState):
+            logger.error(f"Invalid state, must be a PostState enum member.")
+            return
+
         conn = None
         try:
             conn = self._get_connection()
             cursor = conn.cursor()
 
-            # Get the current timestamp
             current_timestamp = datetime.now().isoformat()
 
             cursor.execute(
                 """
                 UPDATE posts
-                SET is_content_relevant = ?,
+                SET state = ?,
                     processed_at = ?
                 WHERE id = ?
                 """,
-                (is_relevant, current_timestamp, post_id) # is_relevant (Python bool) maps to SQLite BOOLEAN
+                (state.value, current_timestamp, post_id)
             )
             conn.commit()
             if cursor.rowcount > 0:
-                logger.debug(f"Post ID {post_id} marked as relevant: {is_relevant} at {current_timestamp}.")
+                logger.debug(f"Post ID {post_id} state updated to: '{state.value}' at {current_timestamp}.")
             else:
-                logger.warning(f"Post ID {post_id} not found to update relevance status.")
+                logger.warning(f"Post ID {post_id} not found to update state.")
         except sqlite3.Error as e:
-            logger.error(f"Database error updating relevance for post ID {post_id}: {e}", exc_info=True)
+            logger.error(f"Database error updating state for post ID {post_id}: {e}", exc_info=True)
         finally:
             if conn:
                 conn.close()
 
     def get_posts_for_content_processing(self, source_id: int = None, limit: int = -1) -> list[dict]:
         """
-        Retrieves posts that have not yet had their content processed/assessed for relevance
-        (i.e., 'is_content_relevant' is NULL).
+        Retrieves posts that have not yet had their content processed.
         Returns a list of dictionaries, where each dictionary contains 'id' and 'link'.
         """
         conn = None
@@ -171,7 +182,7 @@ class DatabaseManager:
             query = """
                 SELECT id, link
                 FROM posts
-                WHERE is_content_relevant IS NULL
+                WHERE state IS 'UNPROCESSED'
             """
             params = []
             if source_id is not None:
