@@ -7,7 +7,6 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # Define the package root directory location
-# This PACKAGE_ROOT is still needed as a base for our file manager
 PACKAGE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 class FileConfigManager:
@@ -17,19 +16,22 @@ class FileConfigManager:
     """
     def __init__(self):
         """
-        Initializes the FileManager with a base directory.
+        Initializes the FileConfigManager with a base directory.
         """
-        self.base_dir = os.path.abspath(os.path.join(PACKAGE_ROOT, '.config'))
-        self._ensure_base_directory_exists()
-        logger.debug(f"FileManager initialized with base directory: '{self.base_dir}'")
+        self._base_dir = os.path.abspath(os.path.join(PACKAGE_ROOT, '.config'))
+        self._ensure_directory_exists(self._base_dir)
+        logger.debug(f"ConfigFileManager initialized with base directory: '{self._base_dir}'")
 
-    def _ensure_base_directory_exists(self):
+    def _ensure_directory_exists(self, dir_path: str):
         """
-        Ensures that the base directory exists. Creates it if it does not.
+        Ensures that the given directory exists. Creates it if it does not.
+
+        Args:
+            dir_path (str): The path to the directory.
         """
-        if not os.path.exists(self.base_dir):
-            os.makedirs(self.base_dir, exist_ok=True)
-            logger.info(f"Created base directory: '{self.base_dir}'")
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path, exist_ok=True)
+            logger.info(f"Created directory: '{dir_path}'")
 
     def get_file_path(self, relative_path: str) -> str:
         """
@@ -42,10 +44,7 @@ class FileConfigManager:
         Returns:
             str: The full absolute path to the file.
         """
-        full_path = os.path.join(self.base_dir, relative_path)
+        full_path = os.path.join(self._base_dir, relative_path)
         # Ensure the parent directory for the specific file exists
-        parent_dir = os.path.dirname(full_path)
-        if not os.path.exists(parent_dir):
-            os.makedirs(parent_dir, exist_ok=True)
-            logger.debug(f"Created parent directory for file: '{parent_dir}'")
+        self._ensure_directory_exists(os.path.dirname(full_path))
         return full_path
