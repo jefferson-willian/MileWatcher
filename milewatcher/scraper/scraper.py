@@ -51,7 +51,7 @@ class Scraper(ABC):
         """
         Helper method to make the HTTP request and parse the HTML from a given URL.
         """
-        self.logger.info(f"Accessing URL: {target_url}")
+        self.logger.debug(f"Accessing URL: {target_url}")
         try:
             response = requests.get(target_url, headers=self.headers, timeout=15)
             response.raise_for_status()

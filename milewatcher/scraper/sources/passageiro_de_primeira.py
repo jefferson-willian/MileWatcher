@@ -21,7 +21,7 @@ class PassageiroDePrimeiraScraper(Scraper):
         Extracts titles and links of posts from the Passageiro de Primeira website.
         """
 
-        self.logger.info("Starting post extraction for Passageiro de Primeira.")
+        self.logger.debug("Starting post extraction for Passageiro de Primeira.")
 
         soup = self._fetch_html_from_url(self._url)
         if not soup:
@@ -34,7 +34,7 @@ class PassageiroDePrimeiraScraper(Scraper):
             self.logger.error("Section 'promocoes' (data-term=\"promocoes\") not found in HTML. Please check the page structure.")
             return []
 
-        self.logger.info("Section 'promocoes' found. Searching for posts...")
+        self.logger.debug("Section 'promocoes' found. Searching for posts...")
 
         h1_titles = promotions_section.find_all('h1', class_='article--title')
 
@@ -57,7 +57,7 @@ class PassageiroDePrimeiraScraper(Scraper):
                 if title and title.strip() != '':
                     posts.append({'title': title, 'link': link})
 
-        self.logger.info(f"Finished extraction for Passageiro de Primeira. Found {len(posts)} posts.")
+        self.logger.debug(f"Finished extraction for Passageiro de Primeira. Found {len(posts)} posts.")
 
         return posts
 
@@ -66,7 +66,7 @@ class PassageiroDePrimeiraScraper(Scraper):
         Extracts the main textual content from a single post URL on Passageiro de Primeira.
         Assumes the main content is within a <div> with class 'single-content'.
         """
-        self.logger.info(f"Extracting content from post URL: {post_url}")
+        self.logger.debug(f"Extracting content from post URL: {post_url}")
         soup = self._fetch_html_from_url(post_url) # Uses the new helper for specific post URL
         if not soup:
             self.logger.error(f"Failed to fetch HTML content for post URL: {post_url}. Cannot extract content.")
@@ -78,7 +78,7 @@ class PassageiroDePrimeiraScraper(Scraper):
         if article_tag:
             # Get all text, strip extra whitespace, and join paragraphs with newlines
             content_text = article_tag.get_text(separator='\n', strip=True)
-            self.logger.info(f"Successfully extracted content from {post_url} (length: {len(content_text)}).")
+            self.logger.debug(f"Successfully extracted content from {post_url} (length: {len(content_text)}).")
             return content_text
         else:
             self.logger.warning(f"Could not find main article (class 'single-content') for {post_url}.")
