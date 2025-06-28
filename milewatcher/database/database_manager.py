@@ -1,27 +1,27 @@
-import sqlite3
-import os
 import logging
+import os
+import sqlite3
 from datetime import datetime
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
-# Define the database file name
-DB_NAME = 'database/promotions.db'
+# Define the package root directory location
+PACKAGE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 class DatabaseManager:
     """
     Manages all SQLite database operations for sources and posts.
     """
-    def __init__(self, db_name: str = DB_NAME):
-        self.db_name = db_name
-        # Ensure the directory exists
-        os.makedirs(os.path.dirname(self.db_name), exist_ok=True)
+    def __init__(self):
+        self._db_name = os.path.join(PACKAGE_ROOT, '.config/database.db') 
+        # Ensure that the database file exists
+        os.makedirs(os.path.dirname(self._db_name), exist_ok=True)
         self._create_database_and_tables()
 
     def _get_connection(self):
         """Helper to get a database connection."""
-        return sqlite3.connect(self.db_name)
+        return sqlite3.connect(self._db_name)
 
     def _create_database_and_tables(self):
         """
@@ -56,7 +56,7 @@ class DatabaseManager:
                     )
                 ''')
             conn.commit()
-            logger.info(f"Database '{self.db_name}' and tables 'sources' and 'posts' ensured to exist.")
+            logger.info(f"Database '{self._db_name}' and tables 'sources' and 'posts' ensured to exist.")
         except sqlite3.Error as e:
             logger.error(f"Database error during table creation: {e}", exc_info=True)
         finally:
@@ -118,7 +118,7 @@ class DatabaseManager:
                 except Exception as e:
                     logger.error(f"Error inserting post {post['link']}: {e}", exc_info=True)
             conn.commit()
-            logger.info(f"Skipped {skipped_count} posts and inserted {inserted_count} new posts into '{self.db_name}'.")
+            logger.info(f"Skipped {skipped_count} posts and inserted {inserted_count} new posts into '{self._db_name}'.")
         except sqlite3.Error as e:
             logger.error(f"Database error during post insertion: {e}", exc_info=True)
         finally:
