@@ -89,11 +89,13 @@ class DatabaseManager:
             if conn:
                 conn.close()
 
-    def insert_posts(self, source_id: int, posts: list[dict]):
+    def insert_posts(self, source_id: int, posts: list[dict]) -> int:
         """
         Inserts a list of posts into the SQLite database, associating them with a source ID.
         Handles duplicate links by ignoring them.
         New posts are inserted with is_processed = 0 (false).
+
+        Returns the number of posts inserted.
         """
         conn = None
         try:
@@ -113,9 +115,11 @@ class DatabaseManager:
                 except Exception as e:
                     logger.error(f"Error inserting post {post['link']}: {e}", exc_info=True)
             conn.commit()
-            logger.info(f"Skipped {skipped_count} posts and inserted {inserted_count} new posts into '{self._db_name}'.")
+            logger.debug(f"Skipped {skipped_count} posts and inserted {inserted_count} new posts into '{self._db_name}'.")
+            return inserted_count
         except sqlite3.Error as e:
             logger.error(f"Database error during post insertion: {e}", exc_info=True)
+            return 0
         finally:
             if conn:
                 conn.close()

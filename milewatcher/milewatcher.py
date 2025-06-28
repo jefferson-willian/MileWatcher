@@ -41,8 +41,8 @@ class MileWatcher:
 
                 if found_posts:
                     logger.info(f"Extracted {len(found_posts)} posts")
-                    self._db_manager.insert_posts(source_id, found_posts)
-                    logger.info(f"New posts saved to the database")
+                    posts_inserted = self._db_manager.insert_posts(source_id, found_posts)
+                    logger.info(f"Inserted {posts_inserted} new posts to the database")
                 else:
                     logger.warning(f"No posts found from {source_name}.")
             except Exception as e:
