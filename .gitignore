@@ -1,4 +1,6 @@
 .venv
+dist
+milewatcher.egg-info
 __pycache__
 *.log
 *.db

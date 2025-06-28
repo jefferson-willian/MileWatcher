@@ -1,9 +1,9 @@
 import logging
 import sys
 
-from database.database_manager import DatabaseManager
-from scraper.sources.passageiro_de_primeira import PassageiroDePrimeiraScraper
-from common.logger import AppLogger
+from milewatcher.database.database_manager import DatabaseManager
+from milewatcher.scraper.sources.passageiro_de_primeira import PassageiroDePrimeiraScraper
+from milewatcher.common.logger import AppLogger
 
 # Configure the logger for the application
 logger = AppLogger.get_logger(__name__)
@@ -126,11 +126,3 @@ class MileWatcher:
         self.run_content_analysis_phase()
         
         logger.info("All scrapers processed. Application finished.")
-
-if __name__ == "__main__":
-
-    # Create an instance of our new class
-    app = MileWatcher()
-
-    # Run the application
-    app.run()
