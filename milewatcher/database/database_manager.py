@@ -1,22 +1,17 @@
 import logging
-import os
 import sqlite3
 from datetime import datetime
+from milewatcher.common.file_config_manager import FileConfigManager
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
-
-# Define the package root directory location
-PACKAGE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 class DatabaseManager:
     """
     Manages all SQLite database operations for sources and posts.
     """
     def __init__(self):
-        self._db_name = os.path.join(PACKAGE_ROOT, '.config/database.db') 
-        # Ensure that the database file exists
-        os.makedirs(os.path.dirname(self._db_name), exist_ok=True)
+        self._db_name = FileConfigManager().get_file_path('database.db') 
         self._create_database_and_tables()
 
     def _get_connection(self):

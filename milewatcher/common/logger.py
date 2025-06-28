@@ -1,9 +1,6 @@
 import logging
-import os
 import sys
-
-# Define the package root directory location
-PACKAGE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+from milewatcher.common.file_config_manager import FileConfigManager
 
 class AppLogger:
     """
@@ -45,9 +42,7 @@ class AppLogger:
         logger.addHandler(console_handler)
 
         # --- Configure File Handler ---
-        app_log_filename = os.path.join(PACKAGE_ROOT, '.config/app_log.log')
-        os.makedirs(os.path.dirname(app_log_filename), exist_ok=True) # Ensure that directory exists
-        file_handler = logging.FileHandler(app_log_filename)
+        file_handler = logging.FileHandler(FileConfigManager().get_file_path('app_log.log'))
         file_handler.setLevel(logging.DEBUG) # File captures all levels (DEBUG, INFO, etc.)
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
