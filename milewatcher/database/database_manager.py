@@ -80,7 +80,7 @@ class DatabaseManager:
                 cursor.execute("INSERT INTO sources (name) VALUES (?)", (source_name,))
                 conn.commit()
                 source_id = cursor.lastrowid
-                logger.info(f"New source '{source_name}' added to the database with ID: {source_id}.")
+                logger.debug(f"New source '{source_name}' added to the database with ID: {source_id}.")
                 return source_id
         except sqlite3.Error as e:
             logger.error(f"Database error getting/creating source '{source_name}': {e}", exc_info=True)
@@ -148,7 +148,7 @@ class DatabaseManager:
             )
             conn.commit()
             if cursor.rowcount > 0:
-                logger.info(f"Post ID {post_id} marked as relevant: {is_relevant} at {current_timestamp}.")
+                logger.debug(f"Post ID {post_id} marked as relevant: {is_relevant} at {current_timestamp}.")
             else:
                 logger.warning(f"Post ID {post_id} not found to update relevance status.")
         except sqlite3.Error as e:
@@ -190,7 +190,7 @@ class DatabaseManager:
                     'id': row[0],  # 'id' é a primeira coluna na SELECT (índice 0)
                     'link': row[1] # 'link' é a segunda coluna na SELECT (índice 1)
                 })
-            logger.info(f"Retrieved {len(posts_to_process)} posts requiring relevance assessment (id and link only).")
+            logger.debug(f"Retrieved {len(posts_to_process)} posts requiring relevance assessment (id and link only).")
             return posts_to_process
         except sqlite3.Error as e:
             logger.error(f"Database error retrieving posts for relevance assessment: {e}", exc_info=True)
